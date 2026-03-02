@@ -1,0 +1,175 @@
+erDiagram
+
+    USER {
+        uuid id PK
+        string email UK
+        string display_name
+        string avatar_url
+        string auth_provider
+        string subscription_tier
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    HOME {
+        uuid id PK
+        string name
+        string address
+        string description
+        string cover_image_url
+        string approval_policy "any_admin | all_admins"
+        int max_concurrent_bookings
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    HOME_MEMBER {
+        uuid id PK
+        uuid home_id FK
+        uuid user_id FK
+        string role "owner | admin | member | guest"
+        string invite_status "pending | accepted | declined"
+        timestamp joined_at
+    }
+
+    INVITE {
+        uuid id PK
+        uuid home_id FK
+        uuid invited_by FK
+        string code UK
+        string email
+        string role "admin | member | guest"
+        timestamp expires_at
+        boolean used
+        timestamp created_at
+    }
+
+    BOOKING {
+        uuid id PK
+        uuid home_id FK
+        uuid requested_by FK
+        date start_date
+        date end_date
+        int guest_count
+        string notes
+        string status "pending | approved | declined | cancelled"
+        string decline_reason
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BOOKING_APPROVAL {
+        uuid id PK
+        uuid booking_id FK
+        uuid admin_id FK
+        string decision "approved | declined"
+        string reason
+        timestamp decided_at
+    }
+
+    MANUAL_CATEGORY {
+        uuid id PK
+        uuid home_id FK
+        string name
+        string icon
+        int sort_order
+        timestamp created_at
+    }
+
+    MANUAL_ENTRY {
+        uuid id PK
+        uuid category_id FK
+        uuid home_id FK
+        string title
+        text content
+        int sort_order
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    MANUAL_ENTRY_MEDIA {
+        uuid id PK
+        uuid entry_id FK
+        string media_type "image | video"
+        string url
+        int sort_order
+    }
+
+    TASK {
+        uuid id PK
+        uuid home_id FK
+        string title
+        text description
+        string status "open | in_progress | done"
+        string assign_type "member | next_visitor"
+        uuid assigned_to FK
+        uuid created_by FK
+        date due_date
+        boolean is_recurring
+        string recurrence_rule
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TASK_MEDIA {
+        uuid id PK
+        uuid task_id FK
+        string media_type "image"
+        string url
+        string label "proof | reference"
+        timestamp created_at
+    }
+
+    ANNOUNCEMENT {
+        uuid id PK
+        uuid home_id FK
+        uuid author_id FK
+        string title
+        text body
+        boolean is_pinned
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    COMMENT {
+        uuid id PK
+        uuid announcement_id FK
+        uuid author_id FK
+        text body
+        timestamp created_at
+    }
+
+    NOTIFICATION {
+        uuid id PK
+        uuid user_id FK
+        uuid home_id FK
+        string type "booking_request | booking_approved | booking_declined | task_assigned | announcement | comment"
+        string title
+        string body
+        string reference_type
+        uuid reference_id
+        boolean is_read
+        timestamp created_at
+    }
+
+    USER ||--o{ HOME_MEMBER : "belongs to homes"
+    HOME ||--o{ HOME_MEMBER : "has members"
+    HOME ||--o{ INVITE : "has invites"
+    USER ||--o{ INVITE : "sends invites"
+    HOME ||--o{ BOOKING : "has bookings"
+    USER ||--o{ BOOKING : "requests bookings"
+    BOOKING ||--o{ BOOKING_APPROVAL : "has approvals"
+    USER ||--o{ BOOKING_APPROVAL : "approves"
+    HOME ||--o{ MANUAL_CATEGORY : "has categories"
+    MANUAL_CATEGORY ||--o{ MANUAL_ENTRY : "contains entries"
+    MANUAL_ENTRY ||--o{ MANUAL_ENTRY_MEDIA : "has media"
+    HOME ||--o{ TASK : "has tasks"
+    USER ||--o{ TASK : "assigned to"
+    TASK ||--o{ TASK_MEDIA : "has media"
+    HOME ||--o{ ANNOUNCEMENT : "has announcements"
+    USER ||--o{ ANNOUNCEMENT : "writes"
+    ANNOUNCEMENT ||--o{ COMMENT : "has comments"
+    USER ||--o{ COMMENT : "writes"
+    USER ||--o{ NOTIFICATION : "receives"
