@@ -486,29 +486,45 @@ export function HomeSettings({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {invites.map((invite) => (
-                <div key={invite.id} className="flex items-center justify-between text-sm">
-                  <div>
-                    <span className="font-mono text-xs bg-[var(--muted)] px-2 py-1 rounded">
-                      {invite.code}
-                    </span>
-                    <Badge className="ml-2" variant="outline">
-                      {invite.role}
-                    </Badge>
-                    <span className="text-[var(--muted-foreground)] ml-2">
-                      expires {new Date(invite.expires_at).toLocaleDateString()}
-                    </span>
+              {invites.map((invite) => {
+                const inviteUrl = `${window.location.origin}/invite/${invite.code}`;
+                return (
+                  <div key={invite.id} className="flex items-center gap-2 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs bg-[var(--muted)] px-2 py-1 rounded truncate">
+                          {inviteUrl}
+                        </span>
+                        <Badge variant="outline" className="shrink-0">
+                          {invite.role}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-[var(--muted-foreground)]">
+                        expires {new Date(invite.expires_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(inviteUrl);
+                        toast({ title: "Link copied!" });
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-[var(--destructive)]"
+                      onClick={() => handleDeleteInvite(invite.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleDeleteInvite(invite.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

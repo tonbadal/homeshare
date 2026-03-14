@@ -54,12 +54,11 @@ export default async function CalendarPage({
 
   const members = (rawMembers ?? []) as unknown as MemberData[];
 
-  // Get bookings (not cancelled)
+  // Get all bookings (including cancelled/declined for list view)
   const { data: rawBookings } = await supabase
     .from("bookings")
     .select("*, profiles(id, display_name, avatar_url)")
     .eq("home_id", homeId)
-    .neq("status", "cancelled")
     .order("start_date", { ascending: true });
 
   const bookings = (rawBookings ?? []) as unknown as BookingWithProfile[];

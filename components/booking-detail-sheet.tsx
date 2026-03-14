@@ -236,8 +236,8 @@ export function BookingDetailSheet({
             </div>
           )}
 
-          {/* Owner can cancel */}
-          {booking.requested_by === userId &&
+          {/* Owner or admin can cancel */}
+          {(booking.requested_by === userId || isAdmin) &&
             (booking.status === "pending" || booking.status === "approved") && (
               <div className="pt-2 border-t border-[var(--border)]">
                 <Button
@@ -247,7 +247,7 @@ export function BookingDetailSheet({
                   className="w-full"
                 >
                   {loading && <Loader2 className="animate-spin" />}
-                  Cancel my booking
+                  {booking.requested_by === userId ? "Cancel my booking" : "Cancel this booking"}
                 </Button>
               </div>
             )}

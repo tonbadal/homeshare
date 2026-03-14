@@ -24,7 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import {
   Calendar,
+  CalendarIcon,
   User,
   Users,
   Clock,
@@ -376,13 +383,38 @@ export function TaskDetailDialog({
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="edit-due-date">Due date</Label>
-              <Input
-                id="edit-due-date"
-                type="date"
-                value={editDueDate}
-                onChange={(e) => setEditDueDate(e.target.value)}
-              />
+              <Label>Due date</Label>
+              <Popover modal>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editDueDate && "text-[var(--muted-foreground)]"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editDueDate
+                      ? format(parseISO(editDueDate), "MMM d, yyyy")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <CalendarPicker
+                    mode="single"
+                    selected={editDueDate ? parseISO(editDueDate) : undefined}
+                    onSelect={(date) =>
+                      setEditDueDate(date ? format(date, "yyyy-MM-dd") : "")
+                    }
+                    defaultMonth={editDueDate ? parseISO(editDueDate) : undefined}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

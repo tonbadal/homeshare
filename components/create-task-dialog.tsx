@@ -21,7 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Loader2, CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils/cn";
 import { useToast } from "@/components/ui/use-toast";
 import type { TaskWithProfiles, MemberOption } from "@/app/(dashboard)/home/[homeId]/tasks/page";
 
@@ -204,13 +212,38 @@ export function CreateTaskDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="task-due-date">Due date (optional)</Label>
-            <Input
-              id="task-due-date"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
+            <Label>Due date (optional)</Label>
+            <Popover modal>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dueDate && "text-[var(--muted-foreground)]"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate
+                    ? format(parseISO(dueDate), "MMM d, yyyy")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0"
+                align="start"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <Calendar
+                  mode="single"
+                  selected={dueDate ? parseISO(dueDate) : undefined}
+                  onSelect={(date) =>
+                    setDueDate(date ? format(date, "yyyy-MM-dd") : "")
+                  }
+                  defaultMonth={dueDate ? parseISO(dueDate) : undefined}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <DialogFooter>

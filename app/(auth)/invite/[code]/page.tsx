@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Home, UserPlus } from "lucide-react";
-import type { Tables } from "@/lib/types/database.types";
 
 export default function InvitePage() {
   const params = useParams();
@@ -35,47 +34,23 @@ export default function InvitePage() {
 
   useEffect(() => {
     async function checkInvite() {
-      // Validate invite code
-      const { data: inviteData, error: inviteError } = await supabase
-        .from("invites")
-        .select("*")
-        .eq("code", code)
-        .eq("used", false)
-        .single() as { data: Tables<"invites"> | null; error: unknown };
+      // Validate invite code via SECURITY DEFINER function (bypasses RLS)
+      const { data: inviteData, error: inviteError } = await supabase.rpc(
+        "get_invite_details",
+        { p_code: code }
+      );
 
-      if (inviteError || !inviteData) {
+      if (inviteError || !inviteData || inviteData.length === 0) {
         setError("This invite link is invalid or has already been used.");
         setLoading(false);
         return;
       }
 
-      if (new Date(inviteData.expires_at) < new Date()) {
-        setError("This invite link has expired.");
-        setLoading(false);
-        return;
-      }
-
-      // Fetch home name
-      const { data: homeData } = await supabase
-        .from("homes")
-        .select("name")
-        .eq("id", inviteData.home_id)
-        .single() as { data: { name: string } | null; error: unknown };
-
-      // Fetch inviter name
-      const { data: inviterData } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", inviteData.invited_by)
-        .single() as { data: { display_name: string | null } | null; error: unknown };
-
-      const homeName = homeData?.name ?? "Unknown Home";
-      const invitedByName = inviterData?.display_name ?? "Someone";
-
+      const detail = inviteData[0];
       setInvite({
-        home_name: homeName,
-        role: inviteData.role,
-        invited_by_name: invitedByName,
+        home_name: detail.home_name,
+        role: detail.role,
+        invited_by_name: detail.invited_by_name,
       });
 
       // Check if user is logged in
@@ -112,7 +87,7 @@ export default function InvitePage() {
     }
 
     if (data.user) {
-      await redeemInvite(data.user.id);
+      await redeemInvite();
     }
   }
 
@@ -120,56 +95,22 @@ export default function InvitePage() {
     if (!user) return;
     setJoining(true);
     setError("");
-    await redeemInvite(user.id);
+    await redeemInvite();
   }
 
-  async function redeemInvite(userId: string) {
-    // Call the redeem-invite edge function or do it directly
-    const { data: inviteData2 } = await supabase
-      .from("invites")
-      .select("*")
-      .eq("code", code)
-      .eq("used", false)
-      .single() as { data: Tables<"invites"> | null; error: unknown };
+  async function redeemInvite() {
+    const { data: homeId, error: redeemError } = await supabase.rpc(
+      "redeem_invite",
+      { p_code: code }
+    );
 
-    if (!inviteData2) {
-      setError("Invite is no longer valid.");
+    if (redeemError) {
+      setError(redeemError.message ?? "Failed to join the home. Please try again.");
       setJoining(false);
       return;
     }
 
-    // Check if already a member
-    const { data: existingMember } = await supabase
-      .from("home_members")
-      .select("id")
-      .eq("home_id", inviteData2.home_id)
-      .eq("user_id", userId)
-      .single();
-
-    if (existingMember) {
-      // Already a member, just redirect
-      router.push(`/home/${inviteData2.home_id}`);
-      return;
-    }
-
-    // Create membership
-    const { error: memberError } = await supabase.from("home_members").insert({
-      home_id: inviteData2.home_id,
-      user_id: userId,
-      role: inviteData2.role as "admin" | "member" | "guest",
-      invite_status: "accepted",
-    });
-
-    if (memberError) {
-      setError("Failed to join the home. Please try again.");
-      setJoining(false);
-      return;
-    }
-
-    // Mark invite as used
-    await supabase.from("invites").update({ used: true }).eq("id", inviteData2.id);
-
-    router.push(`/home/${inviteData2.home_id}`);
+    router.push(`/home/${homeId}`);
     router.refresh();
   }
 

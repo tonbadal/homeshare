@@ -44,12 +44,12 @@ export type BookingWithProfile = {
 
 // Member colours for calendar
 export const MEMBER_COLORS = [
-  { bg: "bg-blue-100", border: "border-blue-400", text: "text-blue-800", hex: "#3b82f6" },
-  { bg: "bg-green-100", border: "border-green-400", text: "text-green-800", hex: "#22c55e" },
-  { bg: "bg-purple-100", border: "border-purple-400", text: "text-purple-800", hex: "#a855f7" },
-  { bg: "bg-orange-100", border: "border-orange-400", text: "text-orange-800", hex: "#f97316" },
-  { bg: "bg-pink-100", border: "border-pink-400", text: "text-pink-800", hex: "#ec4899" },
-  { bg: "bg-teal-100", border: "border-teal-400", text: "text-teal-800", hex: "#14b8a6" },
-  { bg: "bg-amber-100", border: "border-amber-400", text: "text-amber-800", hex: "#f59e0b" },
-  { bg: "bg-cyan-100", border: "border-cyan-400", text: "text-cyan-800", hex: "#06b6d4" },
+  { bg: "bg-blue-500", border: "border-blue-600", text: "text-white", hex: "#3b82f6" },
+  { bg: "bg-emerald-500", border: "border-emerald-600", text: "text-white", hex: "#10b981" },
+  { bg: "bg-violet-500", border: "border-violet-600", text: "text-white", hex: "#8b5cf6" },
+  { bg: "bg-orange-500", border: "border-orange-600", text: "text-white", hex: "#f97316" },
+  { bg: "bg-rose-500", border: "border-rose-600", text: "text-white", hex: "#f43f5e" },
+  { bg: "bg-teal-500", border: "border-teal-600", text: "text-white", hex: "#14b8a6" },
+  { bg: "bg-amber-500", border: "border-amber-600", text: "text-white", hex: "#f59e0b" },
+  { bg: "bg-cyan-500", border: "border-cyan-600", text: "text-white", hex: "#06b6d4" },
 ];

@@ -16,7 +16,6 @@ function SignupSkeleton() {
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
       </CardContent>
     </Card>
   );
