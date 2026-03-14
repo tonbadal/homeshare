@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import { AnnouncementFeed } from "@/components/announcement-feed";
+import { InviteBanner } from "@/components/invite-banner";
 import type { Tables } from "@/lib/types/database.types";
 
 type ProfileData = {
@@ -43,6 +44,13 @@ export default async function AnnouncementsPage({
   if (!membership) redirect("/homes");
 
   const isAdmin = membership.role === "owner" || membership.role === "admin";
+
+  // Get member count for invite banner
+  const { count: memberCount } = await supabase
+    .from("home_members")
+    .select("*", { count: "exact", head: true })
+    .eq("home_id", homeId)
+    .eq("invite_status", "accepted");
 
   // Fetch announcements with author profiles
   const { data: rawAnnouncements } = await supabase
@@ -89,6 +97,10 @@ export default async function AnnouncementsPage({
           Stay in the loop with updates from the family.
         </p>
       </div>
+
+      {isAdmin && (memberCount ?? 0) <= 1 && (
+        <InviteBanner homeId={homeId} userId={user.id} />
+      )}
 
       {announcementsWithComments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">

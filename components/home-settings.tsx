@@ -17,18 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { Copy, ImagePlus, Link2, Loader2, Save, Trash2, UserPlus } from "lucide-react";
+import { Copy, ImagePlus, Loader2, Save, Trash2 } from "lucide-react";
+import { InviteDialog } from "@/components/invite-dialog";
 import type { Tables } from "@/lib/types/database.types";
 
 type MemberWithProfile = Tables<"home_members"> & {
@@ -85,12 +77,6 @@ export function HomeSettings({
   const [members, setMembers] = useState(initialMembers);
   const [invites, setInvites] = useState(initialInvites);
 
-  // Invite state
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [inviteRole, setInviteRole] = useState<"member" | "admin">("member");
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [generatedLink, setGeneratedLink] = useState("");
-
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,7 +93,7 @@ export function HomeSettings({
     if (uploadError) {
       toast({
         title: "Upload failed",
-        description: uploadError.message,
+        description: "Could not upload the image. Please try again or use a smaller file.",
         variant: "destructive",
       });
       setUploadingCover(false);
@@ -125,8 +111,8 @@ export function HomeSettings({
 
     if (updateError) {
       toast({
-        title: "Error",
-        description: "Image uploaded but failed to save URL.",
+        title: "Upload failed",
+        description: "The image was uploaded but we couldn't save it. Please try again.",
         variant: "destructive",
       });
     } else {
@@ -140,6 +126,40 @@ export function HomeSettings({
     if (coverInputRef.current) {
       coverInputRef.current.value = "";
     }
+  }
+
+  async function handleDeleteCover() {
+    setUploadingCover(true);
+
+    // Remove all cover files from storage (cover.jpg, cover.png, etc.)
+    const { data: files } = await supabase.storage
+      .from("home-media")
+      .list(homeId, { search: "cover" });
+
+    if (files && files.length > 0) {
+      await supabase.storage
+        .from("home-media")
+        .remove(files.map((f) => `${homeId}/${f.name}`));
+    }
+
+    const { error } = await supabase
+      .from("homes")
+      .update({ cover_image_url: null })
+      .eq("id", homeId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Could not remove the cover image. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      setCoverImageUrl("");
+      toast({ title: "Cover image removed." });
+      router.refresh();
+    }
+
+    setUploadingCover(false);
   }
 
   async function handleSaveHome(e: React.FormEvent) {
@@ -165,39 +185,17 @@ export function HomeSettings({
     setSaving(false);
   }
 
-  async function handleGenerateInvite() {
-    setInviteLoading(true);
-    const code = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const { data, error } = await supabase
+  async function handleRefreshInvites() {
+    const { data } = await supabase
       .from("invites")
-      .insert({
-        home_id: homeId,
-        invited_by: userId,
-        code,
-        role: inviteRole,
-        expires_at: expiresAt.toISOString(),
-      })
       .select("*, profiles!invites_invited_by_fkey(display_name)")
-      .single();
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to create invite.", variant: "destructive" });
-    } else {
-      const link = `${window.location.origin}/invite/${code}`;
-      setGeneratedLink(link);
-      if (data) {
-        setInvites((prev) => [data as InviteWithProfile, ...prev]);
-      }
+      .eq("home_id", homeId)
+      .eq("used", false)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+    if (data) {
+      setInvites(data as InviteWithProfile[]);
     }
-    setInviteLoading(false);
-  }
-
-  async function handleCopyLink() {
-    await navigator.clipboard.writeText(generatedLink);
-    toast({ title: "Link copied!" });
   }
 
   async function handleRoleChange(memberId: string, newRole: "admin" | "member") {
@@ -268,7 +266,7 @@ export function HomeSettings({
                 </div>
               )}
               {isAdmin && (
-                <>
+                <div className="flex gap-2">
                   <input
                     ref={coverInputRef}
                     type="file"
@@ -290,7 +288,20 @@ export function HomeSettings({
                     )}
                     {coverImageUrl ? "Change image" : "Upload image"}
                   </Button>
-                </>
+                  {coverImageUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingCover}
+                      onClick={handleDeleteCover}
+                      className="text-[var(--destructive)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -360,60 +371,11 @@ export function HomeSettings({
             <CardDescription>{members.length} member{members.length !== 1 ? "s" : ""}</CardDescription>
           </div>
           {isAdmin && (
-            <Dialog open={inviteDialogOpen} onOpenChange={(open) => {
-              setInviteDialogOpen(open);
-              if (!open) setGeneratedLink("");
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <UserPlus className="h-4 w-4" />
-                  Invite
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Invite a family member</DialogTitle>
-                  <DialogDescription>
-                    Generate an invite link to share. It expires in 7 days.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "member" | "admin")}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member — can book stays and create tasks</SelectItem>
-                        <SelectItem value="admin">Admin — can approve bookings and edit manual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {generatedLink ? (
-                    <div className="space-y-2">
-                      <Label>Invite link</Label>
-                      <div className="flex gap-2">
-                        <Input value={generatedLink} readOnly className="text-xs" />
-                        <Button size="icon" variant="outline" onClick={handleCopyLink}>
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        Share this link with the person you want to invite.
-                      </p>
-                    </div>
-                  ) : (
-                    <DialogFooter>
-                      <Button onClick={handleGenerateInvite} disabled={inviteLoading}>
-                        {inviteLoading ? <Loader2 className="animate-spin" /> : <Link2 className="h-4 w-4" />}
-                        Generate link
-                      </Button>
-                    </DialogFooter>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            <InviteDialog
+              homeId={homeId}
+              userId={userId}
+              onInviteCreated={handleRefreshInvites}
+            />
           )}
         </CardHeader>
         <CardContent>

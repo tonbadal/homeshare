@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TaskList } from "@/components/task-list";
+import { InviteBanner } from "@/components/invite-banner";
 import type { Tables } from "@/lib/types/database.types";
 
 export type TaskWithProfiles = Tables<"tasks"> & {
@@ -127,6 +128,9 @@ export default async function TasksPage({
           Keep track of things that need doing around the house.
         </p>
       </div>
+      {isAdmin && members.length <= 1 && (
+        <InviteBanner homeId={homeId} userId={user.id} />
+      )}
       <TaskList
         homeId={homeId}
         userId={user.id}

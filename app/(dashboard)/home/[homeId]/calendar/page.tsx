@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BookingCalendar } from "@/components/booking-calendar";
+import { InviteBanner } from "@/components/invite-banner";
 import type { Tables } from "@/lib/types/database.types";
 
 type BookingWithProfile = Tables<"bookings"> & {
@@ -73,6 +74,9 @@ export default async function CalendarPage({
           View and manage bookings for your shared home.
         </p>
       </div>
+      {isAdmin && members.length <= 1 && (
+        <InviteBanner homeId={homeId} userId={user.id} />
+      )}
       <BookingCalendar
         homeId={homeId}
         userId={user.id}

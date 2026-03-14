@@ -14,7 +14,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
-  X,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,6 +22,7 @@ import { useState } from "react";
 import type { HomeWithRole } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { InviteDialog } from "@/components/invite-dialog";
 
 const navItems = [
   { label: "Calendar", href: "calendar", icon: Calendar },
@@ -161,6 +162,22 @@ export function DashboardSidebar({
         })}
       </nav>
 
+      {/* Invite members — admins only */}
+      {(currentHome.role === "owner" || currentHome.role === "admin") && (
+        <div className="px-3 pb-3">
+          <InviteDialog
+            homeId={homeId}
+            userId={user.id}
+            trigger={
+              <button className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm font-medium text-[var(--sidebar-primary-foreground)] bg-[var(--sidebar-primary)] hover:opacity-90 transition-opacity">
+                <UserPlus className="h-4 w-4" />
+                Invite members
+              </button>
+            }
+          />
+        </div>
+      )}
+
       {/* Bottom - Notifications + User */}
       <div className="p-3 border-t border-[var(--sidebar-border)] space-y-1">
         <div className="flex items-center gap-3 px-3 py-2">
@@ -201,12 +218,7 @@ export function DashboardSidebar({
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[var(--sidebar-background)]">
-            <div className="flex justify-end p-2">
-              <button onClick={() => setMobileOpen(false)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[var(--sidebar-background)] overflow-y-auto">
             {sidebar}
           </div>
         </div>
