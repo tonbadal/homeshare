@@ -1,4 +1,4 @@
-export type { Database, Tables, InsertTables, UpdateTables, Enums } from "./database.types";
+export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from "./database.types";
 
 export type HomeWithRole = {
   id: string;

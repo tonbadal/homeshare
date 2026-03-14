@@ -462,7 +462,7 @@ export function HomeSettings({
                         </Badge>
                       </div>
                       <span className="text-xs text-[var(--muted-foreground)]">
-                        expires {new Date(invite.expires_at).toLocaleDateString()}
+                        expires {invite.expires_at ? new Date(invite.expires_at).toLocaleDateString() : "—"}
                       </span>
                     </div>
                     <Button

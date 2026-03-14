@@ -110,8 +110,8 @@ export default async function TasksPage({
     assigned_profile: task.assigned_to
       ? profileMap.get(task.assigned_to) ?? null
       : null,
-    creator_profile: profileMap.get(task.created_by) ?? {
-      id: task.created_by,
+    creator_profile: (task.created_by ? profileMap.get(task.created_by) : undefined) ?? {
+      id: task.created_by ?? "",
       display_name: null,
       avatar_url: null,
     },
