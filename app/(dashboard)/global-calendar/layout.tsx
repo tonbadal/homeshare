@@ -3,14 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import type { HomeWithRole } from "@/lib/types";
 
-export default async function HomeLayout({
+export default async function AllStaysLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ homeId: string }>;
 }) {
-  const { homeId } = await params;
   const supabase = await createClient();
 
   const {
@@ -21,7 +18,6 @@ export default async function HomeLayout({
     redirect("/login");
   }
 
-  // Get user profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, email, display_name")
@@ -32,7 +28,6 @@ export default async function HomeLayout({
     redirect("/login");
   }
 
-  // Get all homes the user belongs to
   const { data: memberships } = await supabase
     .from("home_members")
     .select("role, homes(id, name, address, description, cover_image_url)")
@@ -53,16 +48,17 @@ export default async function HomeLayout({
     };
   });
 
-  const currentHome = homes.find((h) => h.id === homeId);
-
-  if (!currentHome) {
+  if (homes.length === 0) {
     redirect("/homes");
   }
+
+  // Use first home as sidebar context so per-home nav items still work
+  const currentHome = homes[0];
 
   return (
     <div className="flex min-h-screen">
       <DashboardSidebar
-        homeId={homeId}
+        homeId={currentHome.id}
         homes={homes}
         currentHome={currentHome}
         user={profile}

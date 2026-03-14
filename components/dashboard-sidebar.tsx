@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import {
   Calendar,
+  CalendarRange,
   BookOpen,
   CheckSquare,
   MessageSquare,
@@ -12,10 +13,8 @@ import {
   Home,
   ChevronDown,
   LogOut,
-  Bell,
   Menu,
   X,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -37,7 +36,6 @@ interface DashboardSidebarProps {
   homes: HomeWithRole[];
   currentHome: HomeWithRole;
   user: { id: string; email: string; display_name: string | null };
-  unreadCount: number;
 }
 
 export function DashboardSidebar({
@@ -45,7 +43,6 @@ export function DashboardSidebar({
   homes,
   currentHome,
   user,
-  unreadCount,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -118,6 +115,28 @@ export function DashboardSidebar({
         )}
       </div>
 
+      {/* All Stays overview link */}
+      <div className="px-3 pt-3 pb-1">
+        <p className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-widest px-3 mb-1">
+          Overview
+        </p>
+        <Link
+          href="/global-calendar"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+            pathname.startsWith("/global-calendar")
+              ? "bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] font-medium"
+              : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+          )}
+        >
+          <CalendarRange className="h-4 w-4" />
+          Global Calendar
+        </Link>
+      </div>
+
+      <div className="mx-3 border-t border-[var(--sidebar-border)]" />
+
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {
@@ -144,21 +163,6 @@ export function DashboardSidebar({
 
       {/* Bottom - Notifications + User */}
       <div className="p-3 border-t border-[var(--sidebar-border)] space-y-1">
-        <Link
-          href={`/home/${homeId}/notifications`}
-          onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] transition-colors"
-        >
-          <div className="relative">
-            <Bell className="h-4 w-4" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-[var(--destructive)] text-[9px] text-white flex items-center justify-center font-medium">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </div>
-          Notifications
-        </Link>
         <div className="flex items-center gap-3 px-3 py-2">
           <Link
             href={`/home/${homeId}/account`}
@@ -191,14 +195,6 @@ export function DashboardSidebar({
           </button>
           <span className="font-semibold">{currentHome.name}</span>
         </div>
-        <Link href={`/home/${homeId}/notifications`} className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-[var(--destructive)] text-[9px] text-white flex items-center justify-center font-medium">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Link>
       </div>
 
       {/* Mobile overlay */}
