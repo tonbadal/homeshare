@@ -34,11 +34,6 @@ export default async function HomesPage() {
     return { ...home, role: m.role };
   });
 
-  // If user has exactly one home, redirect directly to it
-  if (homes.length === 1) {
-    redirect(`/home/${homes[0].id}/calendar`);
-  }
-
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <div className="max-w-4xl mx-auto px-4 py-12">

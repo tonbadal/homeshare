@@ -15,6 +15,7 @@ import {
   Bell,
   Menu,
   X,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -159,13 +160,20 @@ export function DashboardSidebar({
           Notifications
         </Link>
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user.display_name || user.email}</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8">
+          <Link
+            href={`/home/${homeId}/account`}
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 flex-1 min-w-0 rounded-md hover:bg-[var(--sidebar-accent)] transition-colors -m-1 p-1"
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user.display_name || user.email}</p>
+              <p className="text-xs text-[var(--muted-foreground)]">Account settings</p>
+            </div>
+          </Link>
+          <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8 shrink-0" title="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
