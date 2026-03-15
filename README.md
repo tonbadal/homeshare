@@ -1,4 +1,4 @@
-# SharedHome
+# Flow Your Home
 
 A shared family home management app. Families that co-own a property use this to coordinate bookings, share house instructions, manage tasks, and communicate — all in one place.
 

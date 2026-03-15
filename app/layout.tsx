@@ -11,13 +11,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SharedHome — Family Home Management",
+  title: "Flow Your Home — Family Home Management",
   description:
     "Coordinate bookings, share house instructions, manage tasks, and communicate with your family.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SharedHome",
+    title: "Flow Your Home",
   },
   icons: {
     apple: "/apple-icon.png",

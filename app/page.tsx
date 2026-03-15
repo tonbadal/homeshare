@@ -9,7 +9,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Home className="h-6 w-6 text-[var(--primary)]" />
-            <span className="text-xl font-bold text-[var(--foreground)]">SharedHome</span>
+            <span className="text-xl font-bold text-[var(--foreground)]">Flow Your Home</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login">
@@ -76,7 +76,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-[var(--border)] py-8 text-center text-sm text-[var(--muted-foreground)]">
-        <p>SharedHome — Made for families who share more than just memories.</p>
+        <p>Flow Your Home — Made for families who share more than just memories.</p>
       </footer>
     </div>
   );
