@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SharedHome — Family Home Management",
-    short_name: "SharedHome",
+    name: "Flow Your Home — Family Home Management",
+    short_name: "Flow Your Home",
     description:
       "Coordinate bookings, share house instructions, manage tasks, and communicate with your family.",
     start_url: "/",

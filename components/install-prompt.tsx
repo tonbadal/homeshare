@@ -75,7 +75,7 @@ export function InstallPrompt() {
 
       {isIOS ? (
         <div className="space-y-2 pr-6">
-          <p className="text-sm font-medium">Add SharedHome to your Home Screen</p>
+          <p className="text-sm font-medium">Add Flow Your Home to your Home Screen</p>
           <p className="text-xs text-muted-foreground">
             Tap the <Share className="inline h-3.5 w-3.5" /> share button in
             Safari, then select <strong>&quot;Add to Home Screen&quot;</strong>.
@@ -84,7 +84,7 @@ export function InstallPrompt() {
       ) : (
         <div className="flex items-center gap-3 pr-6">
           <div className="flex-1">
-            <p className="text-sm font-medium">Install SharedHome</p>
+            <p className="text-sm font-medium">Install Flow Your Home</p>
             <p className="text-xs text-muted-foreground">
               Add to your home screen for quick access
             </p>
