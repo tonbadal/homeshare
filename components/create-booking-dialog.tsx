@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,17 @@ import { cn } from "@/lib/utils/cn";
 import type { Tables } from "@/lib/types/database.types";
 import type { DateRange } from "react-day-picker";
 
+function useMediaQuery(query: string): boolean {
+  const subscribe = (callback: () => void) => {
+    const mql = window.matchMedia(query);
+    mql.addEventListener("change", callback);
+    return () => mql.removeEventListener("change", callback);
+  };
+  const getSnapshot = () => window.matchMedia(query).matches;
+  const getServerSnapshot = () => false;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
 type BookingWithProfile = Tables<"bookings"> & {
   profiles: {
     id: string;
@@ -61,8 +72,9 @@ export function CreateBookingDialog({
   initialStartDate,
   initialEndDate,
 }: CreateBookingDialogProps) {
+  const isSmUp = useMediaQuery("(min-width: 640px)");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [guestCount, setGuestCount] = useState(1);
+  const [guestCount, setGuestCount] = useState("1");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -126,7 +138,7 @@ export function CreateBookingDialog({
         requested_by: userId,
         start_date: startDate,
         end_date: endDate,
-        guest_count: guestCount,
+        guest_count: parseInt(guestCount) || 1,
         notes: notes || null,
       })
       .select(
@@ -151,7 +163,7 @@ export function CreateBookingDialog({
 
     onBookingCreated(data as BookingWithProfile);
     setDateRange(undefined);
-    setGuestCount(1);
+    setGuestCount("1");
     setNotes("");
     setLoading(false);
   }
@@ -197,7 +209,7 @@ export function CreateBookingDialog({
                   mode="range"
                   selected={dateRange}
                   onSelect={setDateRange}
-                  numberOfMonths={2}
+                  numberOfMonths={isSmUp ? 2 : 1}
                   defaultMonth={dateRange?.from}
                 />
                 <div className="border-t border-[var(--border)] p-2 flex justify-end">
@@ -220,8 +232,9 @@ export function CreateBookingDialog({
               id="guest-count"
               type="number"
               min={1}
+              inputMode="numeric"
               value={guestCount}
-              onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
+              onChange={(e) => setGuestCount(e.target.value)}
             />
           </div>
 
@@ -255,7 +268,7 @@ export function CreateBookingDialog({
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
