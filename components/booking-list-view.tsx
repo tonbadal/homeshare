@@ -309,6 +309,7 @@ export function BookingListView({
           isAdmin={isAdmin}
           userId={userId}
           homeId={homeId}
+          members={members}
           onClose={() => setSelectedBooking(null)}
           onUpdated={(updated) => {
             onBookingUpdated(updated);

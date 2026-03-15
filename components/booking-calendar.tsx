@@ -350,7 +350,7 @@ export function BookingCalendar({
           onClick={() => setShowCreateDialog(true)}
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline ml-1">Book a stay</span>
+          <span className="hidden sm:inline ml-1">Add a stay</span>
         </Button>
       </div>
 
@@ -398,7 +398,7 @@ export function BookingCalendar({
       {calendarBookings.length === 0 && (
         <div className="flex items-center gap-2 mb-4 py-3 px-4 rounded-lg bg-[var(--muted)]/50 text-sm text-[var(--muted-foreground)]">
           <Calendar className="h-4 w-4 shrink-0" />
-          Drag across days to book your first stay, or use the button above.
+          Drag across days to add your first stay, or use the button above.
         </div>
       )}
 
@@ -579,6 +579,8 @@ export function BookingCalendar({
         }}
         homeId={homeId}
         userId={userId}
+        isAdmin={isAdmin}
+        members={members}
         existingBookings={bookings}
         onBookingCreated={handleBookingCreated}
         initialStartDate={prefillDates?.start}
@@ -592,6 +594,7 @@ export function BookingCalendar({
           isAdmin={isAdmin}
           userId={userId}
           homeId={homeId}
+          members={members}
           onClose={() => setSelectedBooking(null)}
           onUpdated={handleBookingUpdated}
         />

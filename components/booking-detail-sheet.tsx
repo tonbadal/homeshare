@@ -11,9 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Calendar, Users, Clock, Check, X, Loader2 } from "lucide-react";
+import { Calendar, Users, Clock, Check, X, Loader2, Pencil } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { format, parseISO } from "date-fns";
+import { EditBookingDialog } from "@/components/edit-booking-dialog";
 import type { Tables } from "@/lib/types/database.types";
 
 type BookingWithProfile = Tables<"bookings"> & {
@@ -24,11 +25,23 @@ type BookingWithProfile = Tables<"bookings"> & {
   };
 };
 
+type MemberData = {
+  user_id: string;
+  role: string;
+  profiles: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email: string;
+  };
+};
+
 interface BookingDetailSheetProps {
   booking: BookingWithProfile;
   isAdmin: boolean;
   userId: string;
   homeId: string;
+  members: MemberData[];
   onClose: () => void;
   onUpdated: (booking: BookingWithProfile) => void;
 }
@@ -45,12 +58,14 @@ export function BookingDetailSheet({
   isAdmin,
   userId,
   homeId,
+  members,
   onClose,
   onUpdated,
 }: BookingDetailSheetProps) {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState("");
   const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { toast } = useToast();
 
   async function handleApprove() {
@@ -71,9 +86,9 @@ export function BookingDetailSheet({
       .single();
 
     if (error || approvalError) {
-      toast({ title: "Error", description: "Failed to approve booking.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to approve stay.", variant: "destructive" });
     } else {
-      toast({ title: "Booking approved!" });
+      toast({ title: "Stay approved!" });
       onUpdated(data as BookingWithProfile);
     }
     setLoading(false);
@@ -98,9 +113,9 @@ export function BookingDetailSheet({
       .single();
 
     if (error || approvalError) {
-      toast({ title: "Error", description: "Failed to decline booking.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to decline stay.", variant: "destructive" });
     } else {
-      toast({ title: "Booking declined." });
+      toast({ title: "Stay declined." });
       onUpdated(data as BookingWithProfile);
     }
     setLoading(false);
@@ -118,141 +133,178 @@ export function BookingDetailSheet({
       .single();
 
     if (error) {
-      toast({ title: "Error", description: "Failed to cancel booking.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to cancel stay.", variant: "destructive" });
     } else {
-      toast({ title: "Booking cancelled." });
+      toast({ title: "Stay cancelled." });
       onUpdated(data as BookingWithProfile);
     }
     setLoading(false);
   }
 
+  const canEdit =
+    isAdmin ||
+    (booking.requested_by === userId &&
+      (booking.status === "pending" || booking.status === "approved"));
+
   return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Booking by {booking.profiles.display_name || "Unknown"}
-            <Badge className={statusColors[booking.status]} variant="outline">
-              {booking.status}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Stay by {booking.profiles.display_name || "Unknown"}
+              <Badge className={statusColors[booking.status]} variant="outline">
+                {booking.status}
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-[var(--muted-foreground)]" />
-              <div>
-                <p className="font-medium">
-                  {format(parseISO(booking.start_date), "MMM d, yyyy")}
-                </p>
-                <p className="text-[var(--muted-foreground)] text-xs">Arrival</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-[var(--muted-foreground)]" />
+                <div>
+                  <p className="font-medium">
+                    {format(parseISO(booking.start_date), "MMM d, yyyy")}
+                  </p>
+                  <p className="text-[var(--muted-foreground)] text-xs">Arrival</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-[var(--muted-foreground)]" />
+                <div>
+                  <p className="font-medium">
+                    {format(parseISO(booking.end_date), "MMM d, yyyy")}
+                  </p>
+                  <p className="text-[var(--muted-foreground)] text-xs">Departure</p>
+                </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-[var(--muted-foreground)]" />
-              <div>
-                <p className="font-medium">
-                  {format(parseISO(booking.end_date), "MMM d, yyyy")}
-                </p>
-                <p className="text-[var(--muted-foreground)] text-xs">Departure</p>
+              <Users className="h-4 w-4 text-[var(--muted-foreground)]" />
+              <span>{booking.guest_count} guest{booking.guest_count !== 1 ? "s" : ""}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-[var(--muted-foreground)]" />
+              <span>Added {format(parseISO(booking.created_at), "MMM d, yyyy 'at' HH:mm")}</span>
+            </div>
+
+            {booking.notes && (
+              <div className="text-sm">
+                <p className="font-medium mb-1">Notes</p>
+                <p className="text-[var(--muted-foreground)]">{booking.notes}</p>
               </div>
-            </div>
-          </div>
+            )}
 
-          <div className="flex items-center gap-2 text-sm">
-            <Users className="h-4 w-4 text-[var(--muted-foreground)]" />
-            <span>{booking.guest_count} guest{booking.guest_count !== 1 ? "s" : ""}</span>
-          </div>
+            {booking.decline_reason && (
+              <div className="text-sm p-3 rounded-md bg-red-50 border border-red-200">
+                <p className="font-medium text-red-800 mb-1">Decline reason</p>
+                <p className="text-red-700">{booking.decline_reason}</p>
+              </div>
+            )}
 
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4 text-[var(--muted-foreground)]" />
-            <span>Requested {format(parseISO(booking.created_at), "MMM d, yyyy 'at' HH:mm")}</span>
-          </div>
-
-          {booking.notes && (
-            <div className="text-sm">
-              <p className="font-medium mb-1">Notes</p>
-              <p className="text-[var(--muted-foreground)]">{booking.notes}</p>
-            </div>
-          )}
-
-          {booking.decline_reason && (
-            <div className="text-sm p-3 rounded-md bg-red-50 border border-red-200">
-              <p className="font-medium text-red-800 mb-1">Decline reason</p>
-              <p className="text-red-700">{booking.decline_reason}</p>
-            </div>
-          )}
-
-          {/* Admin actions */}
-          {isAdmin && booking.status === "pending" && (
-            <div className="space-y-3 pt-2 border-t border-[var(--border)]">
-              {showDeclineForm ? (
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Reason for declining (optional)"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    rows={2}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="destructive"
-                      onClick={handleDecline}
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {loading && <Loader2 className="animate-spin" />}
-                      Confirm decline
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeclineForm(false)}
-                    >
-                      Back
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleApprove}
-                    disabled={loading}
-                    className="flex-1"
-                  >
-                    {loading ? <Loader2 className="animate-spin" /> : <Check className="h-4 w-4" />}
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeclineForm(true)}
-                    className="flex-1"
-                  >
-                    <X className="h-4 w-4" />
-                    Decline
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Owner or admin can cancel */}
-          {(booking.requested_by === userId || isAdmin) &&
-            (booking.status === "pending" || booking.status === "approved") && (
+            {/* Edit button */}
+            {canEdit && booking.status !== "cancelled" && booking.status !== "declined" && (
               <div className="pt-2 border-t border-[var(--border)]">
                 <Button
                   variant="outline"
-                  onClick={handleCancel}
-                  disabled={loading}
+                  onClick={() => setShowEditDialog(true)}
                   className="w-full"
                 >
-                  {loading && <Loader2 className="animate-spin" />}
-                  {booking.requested_by === userId ? "Cancel my booking" : "Cancel this booking"}
+                  <Pencil className="h-4 w-4" />
+                  Edit stay
                 </Button>
               </div>
             )}
-        </div>
-      </DialogContent>
-    </Dialog>
+
+            {/* Admin actions */}
+            {isAdmin && booking.status === "pending" && (
+              <div className="space-y-3 pt-2 border-t border-[var(--border)]">
+                {showDeclineForm ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Reason for declining (optional)"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={handleDecline}
+                        disabled={loading}
+                        className="flex-1"
+                      >
+                        {loading && <Loader2 className="animate-spin" />}
+                        Confirm decline
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDeclineForm(false)}
+                      >
+                        Back
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleApprove}
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      {loading ? <Loader2 className="animate-spin" /> : <Check className="h-4 w-4" />}
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeclineForm(true)}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4" />
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Owner or admin can cancel */}
+            {(booking.requested_by === userId || isAdmin) &&
+              (booking.status === "pending" || booking.status === "approved") && (
+                <div className="pt-2 border-t border-[var(--border)]">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading && <Loader2 className="animate-spin" />}
+                    {booking.requested_by === userId ? "Cancel my stay" : "Cancel this stay"}
+                  </Button>
+                </div>
+              )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      {showEditDialog && (
+        <EditBookingDialog
+          booking={booking}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          isAdmin={isAdmin}
+          userId={userId}
+          members={members}
+          onBookingUpdated={(updated) => {
+            onUpdated(updated);
+            setShowEditDialog(false);
+          }}
+        />
+      )}
+    </>
   );
 }

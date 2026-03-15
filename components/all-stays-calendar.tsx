@@ -468,7 +468,7 @@ export function AllStaysCalendar({
           {calendarBookings.length === 0 && (
             <div className="flex items-center gap-2 mb-4 py-3 px-4 rounded-lg bg-[var(--muted)]/50 text-sm text-[var(--muted-foreground)]">
               <Calendar className="h-4 w-4 shrink-0" />
-              No bookings across your homes yet. Head to a home&#39;s calendar to book a stay.
+              No stays across your homes yet. Head to a home&apos;s calendar to add one.
             </div>
           )}
 
@@ -627,6 +627,7 @@ export function AllStaysCalendar({
           isAdmin={adminHomeIds.includes(selectedBooking.home_id)}
           userId={userId}
           homeId={selectedBooking.home_id}
+          members={members.filter((m) => m.home_id === selectedBooking.home_id)}
           onClose={() => setSelectedBooking(null)}
           onUpdated={handleBookingUpdated}
         />
