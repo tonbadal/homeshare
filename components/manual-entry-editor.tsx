@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,27 +69,30 @@ export function ManualEntryEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Reset form when dialog opens with new entry
+  // Sync form state when dialog opens or entry changes
+  useEffect(() => {
+    if (open) {
+      setTitle(entry?.title ?? "");
+      setContent(entry?.content ?? "");
+      setMediaItems(
+        entry
+          ? entry.manual_entry_media.map((m) => ({
+              id: m.id,
+              url: m.url,
+              media_type: m.media_type,
+            }))
+          : []
+      );
+      setSaving(false);
+      setUploading(false);
+    }
+  }, [open, entry]);
+
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (nextOpen) {
-        setTitle(entry?.title ?? "");
-        setContent(entry?.content ?? "");
-        setMediaItems(
-          entry
-            ? entry.manual_entry_media.map((m) => ({
-                id: m.id,
-                url: m.url,
-                media_type: m.media_type,
-              }))
-            : []
-        );
-        setSaving(false);
-        setUploading(false);
-      }
       onOpenChange(nextOpen);
     },
-    [entry, onOpenChange]
+    [onOpenChange]
   );
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
