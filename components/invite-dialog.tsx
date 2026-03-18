@@ -25,14 +25,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { Copy, Link2, Loader2, UserPlus } from "lucide-react";
 
 interface InviteDialogProps {
-  homeId: string;
+  homeId?: string;
+  homes?: { id: string; name: string }[];
   userId: string;
   trigger?: React.ReactNode;
   onInviteCreated?: () => void;
 }
 
 export function InviteDialog({
-  homeId,
+  homeId: fixedHomeId,
+  homes,
   userId,
   trigger,
   onInviteCreated,
@@ -41,22 +43,36 @@ export function InviteDialog({
   const supabase = createClient();
 
   const [open, setOpen] = useState(false);
+  const [selectedHomeId, setSelectedHomeId] = useState(fixedHomeId ?? "");
   const [inviteRole, setInviteRole] = useState<"member" | "admin">("member");
+  const [maxUses, setMaxUses] = useState("");
+  const [expiration, setExpiration] = useState<"7" | "30" | "never">("7");
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
+
+  const homeId = fixedHomeId ?? selectedHomeId;
+  const showHomeSelector = !fixedHomeId && homes && homes.length > 0;
 
   async function handleGenerate() {
     setLoading(true);
     const code = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    let expiresAt: string | null = null;
+    if (expiration !== "never") {
+      const d = new Date();
+      d.setDate(d.getDate() + parseInt(expiration, 10));
+      expiresAt = d.toISOString();
+    }
+
+    const parsedMaxUses = maxUses ? parseInt(maxUses, 10) : null;
 
     const { error } = await supabase.from("invites").insert({
       home_id: homeId,
       invited_by: userId,
       code,
       role: inviteRole,
-      expires_at: expiresAt.toISOString(),
+      expires_at: expiresAt,
+      max_uses: parsedMaxUses,
     });
 
     if (error) {
@@ -85,7 +101,10 @@ export function InviteDialog({
         setOpen(v);
         if (!v) {
           setGeneratedLink("");
+          setSelectedHomeId(fixedHomeId ?? "");
           setInviteRole("member");
+          setMaxUses("");
+          setExpiration("7");
         }
       }}
     >
@@ -99,12 +118,32 @@ export function InviteDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite a family member</DialogTitle>
+          <DialogTitle>Invite family members</DialogTitle>
           <DialogDescription>
-            Generate an invite link to share. It expires in 7 days.
+            Generate a reusable invite link to share with one or more people.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {showHomeSelector && (
+            <div className="space-y-2">
+              <Label>Home</Label>
+              <Select
+                value={selectedHomeId}
+                onValueChange={setSelectedHomeId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a home" />
+                </SelectTrigger>
+                <SelectContent>
+                  {homes.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>
+                      {h.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Role</Label>
             <Select
@@ -124,6 +163,32 @@ export function InviteDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label>Max uses</Label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="Unlimited"
+              value={maxUses}
+              onChange={(e) => setMaxUses(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Expires</Label>
+            <Select
+              value={expiration}
+              onValueChange={(v) => setExpiration(v as "7" | "30" | "never")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 days</SelectItem>
+                <SelectItem value="30">30 days</SelectItem>
+                <SelectItem value="never">Never</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {generatedLink ? (
             <div className="space-y-2">
               <Label>Invite link</Label>
@@ -139,7 +204,7 @@ export function InviteDialog({
             </div>
           ) : (
             <DialogFooter>
-              <Button onClick={handleGenerate} disabled={loading}>
+              <Button onClick={handleGenerate} disabled={loading || !homeId}>
                 {loading ? (
                   <Loader2 className="animate-spin" />
                 ) : (

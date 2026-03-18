@@ -14,7 +14,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
-  UserPlus,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,13 +22,13 @@ import { useState } from "react";
 import type { HomeWithRole } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { InviteDialog } from "@/components/invite-dialog";
 
 const navItems = [
   { label: "Calendar", href: "calendar", icon: Calendar },
   { label: "House Manual", href: "manual", icon: BookOpen },
   { label: "Tasks", href: "tasks", icon: CheckSquare },
   { label: "Announcements", href: "announcements", icon: MessageSquare },
+  { label: "Members", href: "members", icon: Users },
   { label: "Settings", href: "settings", icon: Settings },
 ];
 
@@ -102,22 +102,12 @@ export function DashboardSidebar({
                 <span className="truncate">{home.name}</span>
               </Link>
             ))}
-            <Link
-              href="/homes"
-              onClick={() => {
-                setShowHomeSwitcher(false);
-                setMobileOpen(false);
-              }}
-              className="flex items-center gap-2 p-2 rounded-md text-sm text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)] transition-colors"
-            >
-              All homes
-            </Link>
           </div>
         )}
       </div>
 
-      {/* All Stays overview link */}
-      <div className="px-3 pt-3 pb-1">
+      {/* Overview links */}
+      <div className="px-3 pt-3 pb-1 space-y-1">
         <p className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-widest px-3 mb-1">
           Overview
         </p>
@@ -133,6 +123,32 @@ export function DashboardSidebar({
         >
           <CalendarRange className="h-4 w-4" />
           Global Calendar
+        </Link>
+        <Link
+          href="/homes"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+            pathname === "/homes"
+              ? "bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] font-medium"
+              : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+          )}
+        >
+          <Home className="h-4 w-4" />
+          All Homes
+        </Link>
+        <Link
+          href="/all-members"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+            pathname.startsWith("/all-members")
+              ? "bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] font-medium"
+              : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+          )}
+        >
+          <Users className="h-4 w-4" />
+          All Members
         </Link>
       </div>
 
@@ -161,22 +177,6 @@ export function DashboardSidebar({
           );
         })}
       </nav>
-
-      {/* Invite members — admins only */}
-      {(currentHome.role === "owner" || currentHome.role === "admin") && (
-        <div className="px-3 pb-3">
-          <InviteDialog
-            homeId={homeId}
-            userId={user.id}
-            trigger={
-              <button className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm font-medium text-[var(--sidebar-primary-foreground)] bg-[var(--sidebar-primary)] hover:opacity-90 transition-opacity">
-                <UserPlus className="h-4 w-4" />
-                Invite members
-              </button>
-            }
-          />
-        </div>
-      )}
 
       {/* Bottom - Notifications + User */}
       <div className="p-3 border-t border-[var(--sidebar-border)] space-y-1">

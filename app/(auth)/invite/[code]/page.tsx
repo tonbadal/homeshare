@@ -41,7 +41,7 @@ export default function InvitePage() {
       );
 
       if (inviteError || !inviteData || inviteData.length === 0) {
-        setError("This invite link is invalid or has already been used.");
+        setError("This invite link is invalid, expired, or no longer active.");
         setLoading(false);
         return;
       }

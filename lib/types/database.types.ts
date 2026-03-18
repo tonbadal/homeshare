@@ -318,7 +318,10 @@ export type Database = {
           home_id: string
           id: string
           invited_by: string
+          is_active: boolean
+          max_uses: number | null
           role: Database["public"]["Enums"]["invite_role"]
+          times_used: number
           used: boolean
         }
         Insert: {
@@ -329,7 +332,10 @@ export type Database = {
           home_id: string
           id?: string
           invited_by: string
+          is_active?: boolean
+          max_uses?: number | null
           role?: Database["public"]["Enums"]["invite_role"]
+          times_used?: number
           used?: boolean
         }
         Update: {
@@ -340,7 +346,10 @@ export type Database = {
           home_id?: string
           id?: string
           invited_by?: string
+          is_active?: boolean
+          max_uses?: number | null
           role?: Database["public"]["Enums"]["invite_role"]
+          times_used?: number
           used?: boolean
         }
         Relationships: [

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import type { HomeWithRole } from "@/lib/types";
 
-export default async function AllStaysLayout({
+export default async function OverviewLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -48,21 +48,19 @@ export default async function AllStaysLayout({
     };
   });
 
-  if (homes.length === 0) {
-    redirect("/homes");
-  }
-
-  // Use first home as sidebar context so per-home nav items still work
-  const currentHome = homes[0];
+  // Use first home as sidebar context (may be empty for /homes route)
+  const currentHome = homes[0] ?? null;
 
   return (
     <div className="flex min-h-screen">
-      <DashboardSidebar
-        homeId={currentHome.id}
-        homes={homes}
-        currentHome={currentHome}
-        user={profile}
-      />
+      {currentHome && (
+        <DashboardSidebar
+          homeId={currentHome.id}
+          homes={homes}
+          currentHome={currentHome}
+          user={profile}
+        />
+      )}
       <main className="flex-1 lg:overflow-y-auto pt-14 lg:pt-0">
         <div className="max-w-5xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
           {children}

@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -19,45 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { Copy, ImagePlus, Loader2, Save, Trash2 } from "lucide-react";
-import { InviteDialog } from "@/components/invite-dialog";
+import { ImagePlus, Loader2, Save, Trash2 } from "lucide-react";
 import type { Tables } from "@/lib/types/database.types";
-
-type MemberWithProfile = Tables<"home_members"> & {
-  profiles: {
-    id: string;
-    email: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-};
-
-type InviteWithProfile = Tables<"invites"> & {
-  profiles: { display_name: string | null };
-};
 
 interface HomeSettingsProps {
   home: Tables<"homes">;
-  members: MemberWithProfile[];
-  invites: InviteWithProfile[];
   isAdmin: boolean;
-  userId: string;
   homeId: string;
 }
 
-const roleColors: Record<string, string> = {
-  owner: "bg-amber-100 text-amber-800",
-  admin: "bg-blue-100 text-blue-800",
-  member: "bg-green-100 text-green-800",
-  guest: "bg-gray-100 text-gray-800",
-};
-
 export function HomeSettings({
   home,
-  members: initialMembers,
-  invites: initialInvites,
   isAdmin,
-  userId,
   homeId,
 }: HomeSettingsProps) {
   const router = useRouter();
@@ -73,9 +44,6 @@ export function HomeSettings({
   const [coverImageUrl, setCoverImageUrl] = useState(home.cover_image_url ?? "");
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
-
-  const [members, setMembers] = useState(initialMembers);
-  const [invites, setInvites] = useState(initialInvites);
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -122,7 +90,6 @@ export function HomeSettings({
     }
 
     setUploadingCover(false);
-    // Reset file input so the same file can be re-selected
     if (coverInputRef.current) {
       coverInputRef.current.value = "";
     }
@@ -131,7 +98,6 @@ export function HomeSettings({
   async function handleDeleteCover() {
     setUploadingCover(true);
 
-    // Remove all cover files from storage (cover.jpg, cover.png, etc.)
     const { data: files } = await supabase.storage
       .from("home-media")
       .list(homeId, { search: "cover" });
@@ -185,60 +151,8 @@ export function HomeSettings({
     setSaving(false);
   }
 
-  async function handleRefreshInvites() {
-    const { data } = await supabase
-      .from("invites")
-      .select("*, profiles!invites_invited_by_fkey(display_name)")
-      .eq("home_id", homeId)
-      .eq("used", false)
-      .gte("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
-    if (data) {
-      setInvites(data as InviteWithProfile[]);
-    }
-  }
-
-  async function handleRoleChange(memberId: string, newRole: "admin" | "member") {
-    const { error } = await supabase
-      .from("home_members")
-      .update({ role: newRole })
-      .eq("id", memberId);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to change role.", variant: "destructive" });
-    } else {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m))
-      );
-      toast({ title: "Role updated!" });
-    }
-  }
-
-  async function handleRemoveMember(memberId: string) {
-    const { error } = await supabase
-      .from("home_members")
-      .delete()
-      .eq("id", memberId);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to remove member.", variant: "destructive" });
-    } else {
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
-      toast({ title: "Member removed." });
-    }
-  }
-
-  async function handleDeleteInvite(inviteId: string) {
-    const { error } = await supabase.from("invites").delete().eq("id", inviteId);
-    if (!error) {
-      setInvites((prev) => prev.filter((i) => i.id !== inviteId));
-      toast({ title: "Invite deleted." });
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {/* Home details */}
       <Card>
         <CardHeader>
           <CardTitle>Home Details</CardTitle>
@@ -362,135 +276,6 @@ export function HomeSettings({
           </form>
         </CardContent>
       </Card>
-
-      {/* Members */}
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div>
-            <CardTitle>Members</CardTitle>
-            <CardDescription>{members.length} member{members.length !== 1 ? "s" : ""}</CardDescription>
-          </div>
-          {isAdmin && (
-            <InviteDialog
-              homeId={homeId}
-              userId={userId}
-              onInviteCreated={handleRefreshInvites}
-            />
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {members.map((member) => {
-              const profile = member.profiles;
-              const initials = (profile.display_name || profile.email)
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2);
-
-              return (
-                <div key={member.id} className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {profile.display_name || profile.email}
-                      {member.user_id === userId && (
-                        <span className="text-[var(--muted-foreground)]"> (you)</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-[var(--muted-foreground)] truncate">
-                      {profile.email}
-                    </p>
-                  </div>
-                  <Badge className={roleColors[member.role]} variant="outline">
-                    {member.role}
-                  </Badge>
-                  {isAdmin && member.role !== "owner" && member.user_id !== userId && (
-                    <div className="flex items-center gap-1">
-                      <Select
-                        value={member.role}
-                        onValueChange={(v) => handleRoleChange(member.id, v as "admin" | "member")}
-                      >
-                        <SelectTrigger className="h-8 w-24 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="member">Member</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-[var(--destructive)]"
-                        onClick={() => handleRemoveMember(member.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pending invites */}
-      {isAdmin && invites.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Invites</CardTitle>
-            <CardDescription>Invite links that haven&apos;t been used yet.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {invites.map((invite) => {
-                const inviteUrl = `${window.location.origin}/invite/${invite.code}`;
-                return (
-                  <div key={invite.id} className="flex items-center gap-2 text-sm">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs bg-[var(--muted)] px-2 py-1 rounded truncate">
-                          {inviteUrl}
-                        </span>
-                        <Badge variant="outline" className="shrink-0">
-                          {invite.role}
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-[var(--muted-foreground)]">
-                        expires {invite.expires_at ? new Date(invite.expires_at).toLocaleDateString() : "—"}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(inviteUrl);
-                        toast({ title: "Link copied!" });
-                      }}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-[var(--destructive)]"
-                      onClick={() => handleDeleteInvite(invite.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
